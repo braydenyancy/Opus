@@ -14,6 +14,14 @@ npm start
 That is the whole setup. The script installs dependencies on first run, boots Vite and opens
 your browser at `http://localhost:5173`. Node 18+ required.
 
+| | |
+| --- | --- |
+| ![Nebula](docs/nebula.jpg) | ![Tunnel](docs/tunnel.jpg) |
+| ![Terrain](docs/terrain.jpg) | ![Oscillo](docs/oscillo.jpg) |
+
+<sub>Captured by the headless smoke test on a software rasteriser — a real GPU is sharper and
+considerably faster.</sub>
+
 ---
 
 ## What it does

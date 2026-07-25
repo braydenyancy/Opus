@@ -299,7 +299,33 @@ export class Analysis {
     f.barPhase = ((this.beats % 4) + this.phase) / 4;
     f.beatCount = this.beats;
 
+    if (f.silence > 0.01) this.idleWash(f, dt);
+
     return f;
+  }
+
+  /**
+   * With no signal every scene would sit frozen in the dark, which reads as
+   * broken rather than idle. Fade in a slow synthetic swell instead — it only
+   * ever raises values, never masks real audio, and the readouts still say "—".
+   */
+  private idleWash(f: Features, dt: number): void {
+    const k = f.silence;
+    const t = this.clock;
+    for (let i = 0; i < NUM_BANDS; i++) {
+      const x = i / NUM_BANDS;
+      const wash =
+        0.17 * Math.exp(-x * 2.4) * (0.55 + 0.45 * Math.sin(t * 0.55 + x * 8.0)) +
+        0.035 * (0.5 + 0.5 * Math.sin(t * 0.31 - x * 14.0));
+      f.bands[i] = Math.max(f.bands[i], wash * k);
+      f.peaks[i] = Math.max(f.peaks[i], f.bands[i]);
+    }
+    f.level = Math.max(f.level, 0.1 * k * (0.6 + 0.4 * Math.sin(t * 0.5)));
+    f.bass = Math.max(f.bass, 0.13 * k * (0.5 + 0.5 * Math.sin(t * 0.42)));
+    f.lowMid = Math.max(f.lowMid, 0.09 * k);
+    f.mid = Math.max(f.mid, 0.07 * k * (0.5 + 0.5 * Math.sin(t * 0.27 + 2)));
+    f.high = Math.max(f.high, 0.05 * k);
+    f.hue = (f.hue + dt * 0.018 * k) % 1;
   }
 
   /** Average the (already normalised) bands that fall inside a frequency window. */

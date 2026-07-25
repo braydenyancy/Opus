@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#05060a" />
+    <meta
+      name="description"
+      content="PRISM — an audio-reactive visual instrument. Real-time DSP, GPU particle fields and raymarched scenes, in the browser."
+    />
+    <title>PRISM — audio-reactive visual instrument</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3 29 27H3z' fill='none' stroke='%234fd6ff' stroke-width='2'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+
+    <header class="hud hud-top">
+      <div class="brand">
+        <svg class="glyph" viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M16 3 29 27H3z" />
+          <path d="M16 3v24" class="thin" />
+        </svg>
+        <div class="brand-text">
+          <span class="mark">PRISM</span>
+          <span class="sub" id="scene-blurb">audio-reactive visual instrument</span>
+        </div>
+      </div>
+
+      <div class="readout">
+        <canvas id="mini" width="288" height="44" aria-hidden="true"></canvas>
+        <dl>
+          <div><dt>bpm</dt><dd id="r-bpm">—</dd></div>
+          <div><dt>key</dt><dd id="r-key">—</dd></div>
+          <div><dt>rms</dt><dd id="r-level">—</dd></div>
+          <div><dt>fps</dt><dd id="r-fps">—</dd></div>
+        </dl>
+      </div>
+    </header>
+
+    <footer class="hud hud-bottom">
+      <div class="dock">
+        <button id="play" class="transport" aria-label="Play or pause">
+          <svg class="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" /></svg>
+          <svg class="i-pause" viewBox="0 0 24 24"><path d="M8.5 5h2.5v14H8.5zM13 5h2.5v14H13z" /></svg>
+        </button>
+
+        <div class="track">
+          <div class="track-head">
+            <span class="track-title" id="track-title">Generative — “Parallax”</span>
+            <span class="track-time"><span id="time-now">0:00</span></span>
+          </div>
+          <div class="scrub" id="scrub" role="slider" aria-label="Seek" tabindex="0">
+            <div class="scrub-rail"></div>
+            <div class="scrub-fill" id="scrub-fill"></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <span class="label">source</span>
+          <div class="segmented" id="source">
+            <button data-src="demo" class="on">Demo</button>
+            <button data-src="file">File</button>
+            <button data-src="mic">Mic</button>
+          </div>
+        </div>
+
+        <div class="group">
+          <span class="label">scene</span>
+          <div class="segmented" id="scenes"></div>
+        </div>
+
+        <div class="group">
+          <span class="label">palette</span>
+          <div class="swatches" id="palettes"></div>
+        </div>
+
+        <div class="group sliders">
+          <label class="slider">
+            <span class="label">glow</span>
+            <input type="range" id="glow" min="0" max="2" step="0.01" value="1" />
+          </label>
+          <label class="slider">
+            <span class="label">trails</span>
+            <input type="range" id="trails" min="0" max="1.6" step="0.01" value="1" />
+          </label>
+        </div>
+
+        <div class="group actions">
+          <button id="auto" class="chip" title="Cycle scenes automatically (A)">Auto</button>
+          <button id="shot" class="chip icon" title="Save a frame (S)" aria-label="Save a frame">
+            <svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" /><circle cx="12" cy="13.5" r="3.2" /></svg>
+          </button>
+          <button id="full" class="chip icon" title="Fullscreen (F)" aria-label="Fullscreen">
+            <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>
+          </button>
+        </div>
+      </div>
+    </footer>
+
+    <section id="overlay" class="overlay">
+      <div class="overlay-inner">
+        <svg class="hero-glyph" viewBox="0 0 120 104" aria-hidden="true">
+          <path d="M60 6 114 98H6z" />
+          <path d="M60 6v92M6 98h108" class="thin" />
+        </svg>
+        <h1>PRISM</h1>
+        <p class="tagline">An audio-reactive visual instrument.</p>
+        <p class="detail">
+          Real-time spectral analysis, onset detection and a phase-locked beat clock drive four GPU scenes.
+          Bring your own track, sing into the mic, or let the built-in generative piece play.
+        </p>
+        <button id="begin">Begin</button>
+        <ul class="hints">
+          <li><kbd>space</kbd> play</li>
+          <li><kbd>1</kbd>–<kbd>4</kbd> scene</li>
+          <li><kbd>P</kbd> palette</li>
+          <li><kbd>H</kbd> hide UI</li>
+          <li><kbd>?</kbd> all keys</li>
+        </ul>
+      </div>
+    </section>
+
+    <div id="drop" class="drop"><div class="drop-inner">Release to play</div></div>
+    <div id="toast" class="toast"></div>
+
+    <section id="help" class="help">
+      <div class="help-card">
+        <h2>Keys</h2>
+        <dl>
+          <div><dt>space</dt><dd>play / pause</dd></div>
+          <div><dt>1 – 4</dt><dd>choose a scene</dd></div>
+          <div><dt>← →</dt><dd>previous / next scene</dd></div>
+          <div><dt>P</dt><dd>next palette</dd></div>
+          <div><dt>A</dt><dd>auto-cycle scenes</dd></div>
+          <div><dt>O</dt><dd>open an audio file</dd></div>
+          <div><dt>M</dt><dd>use the microphone</dd></div>
+          <div><dt>D</dt><dd>back to the generative track</dd></div>
+          <div><dt>S</dt><dd>save a PNG frame</dd></div>
+          <div><dt>F</dt><dd>fullscreen</dd></div>
+          <div><dt>H</dt><dd>hide the interface</dd></div>
+          <div><dt>? / esc</dt><dd>toggle this panel</dd></div>
+        </dl>
+        <p class="help-foot">Drop an audio file anywhere to play it.</p>
+      </div>
+    </section>
+
+    <input type="file" id="file-input" accept="audio/*" hidden />
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

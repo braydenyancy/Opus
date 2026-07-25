@@ -7,15 +7,27 @@
  *   node scripts/smoke.mjs [--keep-shots]
  */
 import { spawn } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const shotDir = join(root, '.smoke');
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const CHROME =
+  process.env.CHROME_PATH ??
+  [
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium',
+  ].find((p) => existsSync(p));
 const URL = 'http://localhost:5199/';
+
+if (!CHROME) {
+  console.error('No Chrome or Chromium found. Set CHROME_PATH to a browser binary.');
+  process.exit(1);
+}
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
